@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="Optimal Academic Study Engine - Weekly Pomodoro schedule, Active Recall checkpoints, and Spaced Repetition dashboard.">
+  <title>Cognitive Study Engine | Master Weekly Plan & Coach Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="app-background">
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+    <div class="glow-orb orb-3"></div>
+  </div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="dashboard-header">
+      <div class="header-top-row">
+        <div class="brand-badge">
+          <span class="pulse-dot"></span>
+          <span>EXPERT ACADEMIC COACHING SYSTEM</span>
+        </div>
+        <div class="header-actions-group">
+          <!-- Dynamic Theme Switcher -->
+          <div class="theme-switcher-box" title="Select Color Scheme">
+            <span class="theme-icon">🎨</span>
+            <select id="theme-selector" class="theme-select" aria-label="Select Theme Color Palette">
+              <option value="cyberpunk">Cyberpunk Neon</option>
+              <option value="obsidian">Obsidian Dark</option>
+              <option value="emerald">Aurora Emerald</option>
+              <option value="sunset">Twilight Sunset</option>
+            </select>
+          </div>
+
+          <!-- Sound FX Toggle Button -->
+          <button id="sound-toggle-btn" class="sound-toggle-pill" title="Toggle Interactive Audio FX (or press 'M')">
+            <span id="sound-icon">🔊</span>
+            <span id="sound-label">Audio FX: ON</span>
+          </button>
+
+          <!-- User Profile & Active Session Tracker Button -->
+          <button id="user-profile-btn" class="user-profile-pill" title="View Account & Session History Dashboard">
+            <span class="user-avatar-mini" id="user-avatar-mini">👤</span>
+            <span id="user-name-display">Your Name</span>
+            <span class="session-live-dot"></span>
+            <span class="session-timer-badge" id="session-timer-badge">00:00:00</span>
+          </button>
+        </div>
+      </div>
+      <div class="header-main">
+        <div>
+          <h1 class="header-title">Optimal Weekly Study Engine</h1>
+          <p class="header-subtitle">Science-backed Pomodoro cycles, Active Recall blurting checkpoints, & Spaced
+            Repetition mastery.</p>
+        </div>
+        <div class="header-stats">
+          <div class="stat-card">
+            <span class="stat-label">Weekly Completion</span>
+            <div class="stat-val-group">
+              <span id="overall-progress-text" class="stat-value">0%</span>
+              <span id="completed-blocks-count" class="stat-sub">0/28 Blocks</span>
+            </div>
+            <div class="progress-bar-container">
+              <div id="overall-progress-bar" class="progress-bar-fill" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="stat-card streak-card">
+            <span class="stat-label">Retention Index</span>
+            <div class="stat-val-group">
+              <span class="stat-value highlight-accent">94.2%</span>
+              <span class="stat-sub">Leitner Optimized</span>
+            </div>
+            <div class="badge-pill">Spaced Rep Active</div>
+          </div>
+          <div class="stat-card session-stat-card" id="session-stat-card" title="Click to view Study Session History & Analytics">
+            <span class="stat-label">Study Time Invested</span>
+            <div class="stat-val-group">
+              <span id="lifetime-study-time" class="stat-value highlight-accent">0h 00m</span>
+              <span id="today-study-time" class="stat-sub">Today: 0m active</span>
+            </div>
+            <div class="badge-pill stat-session-pill">⚡ Live Session</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Top Grid: Course Confidence & Built-in Pomodoro Timer -->
+    <section class="control-grid">
+      <!-- Course Confidence Matrix (50/30/20 Rule) -->
+      <div class="glass-panel course-matrix-panel">
+        <div class="panel-header">
+          <div class="panel-title-wrap">
+            <div class="panel-icon">🎯</div>
+            <div>
+              <h2 class="panel-title">Active Courses & Confidence Weighting</h2>
+              <p class="panel-sub">Time allocation automatically prioritizes weak spots (Level 1–2).</p>
+            </div>
+          </div>
+          <button id="reset-courses-btn" class="btn-ghost" title="Reset sample courses">Reset Defaults</button>
+        </div>
+
+        <div class="courses-list" id="courses-container">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="allocation-summary">
+          <span class="alloc-title">Calculated Study Time Split:</span>
+          <div class="alloc-bar" id="allocation-bar">
+            <!-- Dynamic segments injected by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Integrated Pomodoro Timer -->
+      <div class="glass-panel timer-panel">
+        <div class="panel-header">
+          <div class="panel-title-wrap">
+            <div class="panel-icon">⏱️</div>
+            <div>
+              <h2 class="panel-title">Live Focus & Active Recall Timer</h2>
+              <p class="panel-sub" id="timer-target-task">Ready for Session P1</p>
+            </div>
+          </div>
+          <div class="timer-mode-pills">
+            <button class="mode-pill active" data-mode="standard">25 / 5</button>
+            <button class="mode-pill" data-mode="deep">50 / 10</button>
+            <button class="mode-pill" data-mode="recall">5m Blurt</button>
+          </div>
+        </div>
+
+        <div class="timer-display-wrap">
+          <div class="circular-timer">
+            <svg class="progress-ring" width="220" height="220">
+              <circle class="progress-ring__bg" stroke="rgba(255,255,255,0.06)" stroke-width="10" cx="110" cy="110"
+                r="95" fill="transparent" />
+              <circle id="timer-progress-ring" class="progress-ring__circle" stroke="url(#timerGradient)"
+                stroke-width="10" stroke-dasharray="596.9" stroke-dashoffset="0" stroke-linecap="round" cx="110"
+                cy="110" r="95" fill="transparent" />
+              <defs>
+                <linearGradient id="timerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#6366f1" />
+                  <stop offset="50%" stop-color="#ec4899" />
+                  <stop offset="100%" stop-color="#06b6d4" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <div class="timer-center-content">
+              <span id="timer-label" class="timer-state-label">FOCUS INTERVAL</span>
+              <span id="timer-time" class="timer-digits">25:00</span>
+              <span id="timer-round-info" class="timer-round-info">Pomodoro 1 of 4</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="timer-controls">
+          <button id="timer-toggle-btn" class="btn-primary timer-btn-large">
+            <span id="timer-btn-icon">▶</span>
+            <span id="timer-btn-text">Start Focus Block</span>
+          </button>
+          <button id="timer-reset-btn" class="btn-secondary">Reset</button>
+          <button id="timer-skip-btn" class="btn-secondary">Skip Phase</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Beginner-friendly subject reference -->
+    <section class="glass-panel subject-basics-panel" aria-labelledby="subject-basics-title">
+      <div class="panel-header">
+        <div class="panel-title-wrap">
+          <div class="panel-icon">📚</div>
+          <div>
+            <h2 id="subject-basics-title" class="panel-title">Subject Basics</h2>
+            <p class="panel-sub">Quick meanings to understand what each subject is about.</p>
+          </div>
+        </div>
+        <button id="ask-subject-basics-btn" class="btn-secondary btn-sm">Ask AI Teacher</button>
+      </div>
+      <div class="subject-basics-grid">
+        <article class="subject-basic-card">
+          <span class="subject-basic-icon">🎨</span>
+          <h3>User Interface / Design</h3>
+          <p>How digital products look and feel, and how users complete tasks easily, clearly, and comfortably.</p>
+          <span class="subject-basic-example">Example: buttons, layouts, colors, typography, usability.</span>
+        </article>
+        <article class="subject-basic-card">
+          <span class="subject-basic-icon">🤖</span>
+          <h3>Fundamentals of Artificial Intelligence</h3>
+          <p>How computers learn from data, make decisions, recognize patterns, and solve problems.</p>
+          <span class="subject-basic-example">Example: machine learning, search, neural networks, prediction.</span>
+        </article>
+        <article class="subject-basic-card">
+          <span class="subject-basic-icon">🗄️</span>
+          <h3>RDBMS</h3>
+          <p>A way to store organized data in related tables and retrieve it reliably using SQL.</p>
+          <span class="subject-basic-example">Example: customers, orders, keys, joins, normalization.</span>
+        </article>
+        <article class="subject-basic-card">
+          <span class="subject-basic-icon">🐍</span>
+          <h3>Python</h3>
+          <p>A readable programming language used to automate tasks, build applications, analyze data, and create AI.</p>
+          <span class="subject-basic-example">Example: variables, loops, functions, lists, classes.</span>
+        </article>
+        <article class="subject-basic-card">
+          <span class="subject-basic-icon">🌐</span>
+          <h3>Computer Network</h3>
+          <p>How computers and devices communicate, share data, and access services across connected systems.</p>
+          <span class="subject-basic-example">Example: IP, DNS, HTTP, TCP/IP, routing, network security.</span>
+        </article>
+      </div>
+    </section>
+
+    <!-- Main Navigation: Weekday Selector & Tools Navigation -->
+    <nav class="week-navigation" aria-label="Day selection">
+      <div class="day-tabs" id="day-tabs">
+        <button class="day-tab active" data-day="mon">
+          <span class="day-name">Mon</span>
+          <span class="day-focus-tag">High Friction</span>
+          <span class="day-status-pill" id="badge-mon">0/4</span>
+        </button>
+        <button class="day-tab" data-day="tue">
+          <span class="day-name">Tue</span>
+          <span class="day-focus-tag">Assignment</span>
+          <span class="day-status-pill" id="badge-tue">0/4</span>
+        </button>
+        <button class="day-tab" data-day="wed">
+          <span class="day-name">Wed</span>
+          <span class="day-focus-tag">Deep Problem</span>
+          <span class="day-status-pill" id="badge-wed">0/4</span>
+        </button>
+        <button class="day-tab" data-day="thu">
+          <span class="day-name">Thu</span>
+          <span class="day-focus-tag">Mistake Audit</span>
+          <span class="day-status-pill" id="badge-thu">0/4</span>
+        </button>
+        <button class="day-tab" data-day="fri">
+          <span class="day-name">Fri</span>
+          <span class="day-focus-tag">Synthesis</span>
+          <span class="day-status-pill" id="badge-fri">0/4</span>
+        </button>
+        <button class="day-tab weekend-tab" data-day="sat">
+          <span class="day-name">Sat</span>
+          <span class="day-focus-tag">Simulation</span>
+          <span class="day-status-pill" id="badge-sat">0/4</span>
+        </button>
+        <button class="day-tab weekend-tab" data-day="sun">
+          <span class="day-name">Sun</span>
+          <span class="day-focus-tag">Spaced Reset</span>
+          <span class="day-status-pill" id="badge-sun">0/4</span>
+        </button>
+      </div>
+
+      <div class="view-toggles">
+        <button class="toggle-tool-btn active" id="btn-show-schedule">📅 Daily Checklist Grid</button>
+        <button class="toggle-tool-btn" id="btn-show-recall">🧠 Active Recall Lab</button>
+        <button class="toggle-tool-btn" id="btn-show-spaced">📦 Spaced Repetition (SR)</button>
+      </div>
+    </nav>
+
+    <!-- SECTION 1: Day-by-Day Checklist Grid -->
+    <main id="schedule-view" class="view-section active">
+      <div class="glass-panel day-content-card">
+        <div class="day-header-row">
+          <div>
+            <div class="day-title-wrap">
+              <h2 id="current-day-heading" class="day-heading">Monday — High-Friction Priority ("Eat the Frog")</h2>
+              <span id="day-availability-badge" class="availability-badge">Study Window: 6:00 PM – 9:45 PM (3h
+                45m)</span>
+            </div>
+            <p id="current-day-strategy" class="day-strategy-text">Tackle your level 1-2 weakest concepts first while
+              cognitive reserves are at their highest.</p>
+          </div>
+          <div class="day-action-controls">
+            <button id="add-custom-block-btn" class="btn-secondary btn-sm">+ Add Block</button>
+            <button id="mark-all-day-btn" class="btn-ghost btn-sm">Check All</button>
+          </div>
+        </div>
+
+        <!-- The Checklist Table Grid -->
+        <div class="table-responsive">
+          <table class="checklist-table" id="checklist-table">
+            <thead>
+              <tr>
+                <th style="width: 55px; text-align: center;">Done</th>
+                <th style="width: 100px;">Block</th>
+                <th style="width: 150px;">Time / Type</th>
+                <th style="width: 230px;">Subject & Objective</th>
+                <th>Active Recall Protocol</th>
+                <th style="width: 180px;">Spaced Repetition Slot</th>
+                <th style="width: 110px; text-align: center;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="checklist-tbody">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <!-- SECTION 2: Active Recall Blurting Lab -->
+    <section id="recall-view" class="view-section">
+      <div class="glass-panel recall-lab-card">
+        <div class="panel-header">
+          <div class="panel-title-wrap">
+            <div class="panel-icon">🧠</div>
+            <div>
+              <h2 class="panel-title">Active Recall & Blurting Workshop</h2>
+              <p class="panel-sub">Close your books. Set a 5-minute timer. Force your brain to retrieve knowledge
+                without hints.</p>
+            </div>
+          </div>
+          <span class="badge-pill">Feynman Retrieval Technique</span>
+        </div>
+
+        <div class="recall-workflow-steps">
+          <div class="step-card">
+            <span class="step-num">01</span>
+            <h4>Prime (5 min)</h4>
+            <p>Scan a single tricky theorem, data structure, or formula from your weak subject.</p>
+          </div>
+          <div class="step-arrow">→</div>
+          <div class="step-card active">
+            <span class="step-num">02</span>
+            <h4>Blurt (7 min)</h4>
+            <p>Close all tabs/notes. Type everything you understand into the retrieval box below.</p>
+          </div>
+          <div class="step-arrow">→</div>
+          <div class="step-card">
+            <span class="step-num">03</span>
+            <h4>Audit (3 min)</h4>
+            <p>Compare against textbook. Use red highlights for missing links and add to Bug Log.</p>
+          </div>
+        </div>
+
+        <div class="recall-interface-grid">
+          <div class="recall-editor-wrap">
+            <div class="editor-header">
+              <label for="blurt-topic-input" class="editor-label">Topic / Concept Being Retrieved:</label>
+              <input type="text" id="blurt-topic-input" class="text-input"
+                placeholder="Ask your AI teacher anything about UI design, AI, RDBMS, Python, or networks...">
+            </div>
+            <textarea id="blurt-textarea" class="blurt-textarea"
+              placeholder="Start typing everything you can retrieve from memory: definitions, step-by-step logic, edge cases, formulas, common pitfalls... (Do NOT look at your notes!)"></textarea>
+            <div class="editor-footer">
+              <div class="word-counter"><span id="blurt-word-count">0</span> words retrieved</div>
+              <div class="editor-btns">
+                <button id="quick-blurt-timer-btn" class="btn-secondary btn-sm">⏱️ Start 5m Blurt Timer</button>
+                <button id="save-blurt-btn" class="btn-primary btn-sm">Save to Error Log</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="recall-sidebar">
+            <h3 class="sidebar-title">Active Mistake Log ("Bug Log")</h3>
+            <p class="sidebar-sub">Every error caught during recall is a point saved on exam day.</p>
+            <div class="bug-log-list" id="bug-log-list">
+              <div class="bug-item">
+                <span class="bug-tag math">Calc II</span>
+                <p class="bug-desc">Forgot condition |r| &lt; 1 for geometric series convergence.</p>
+                <span class="bug-fix">Remedy: Flashcard Box 1</span>
+              </div>
+              <div class="bug-item">
+                <span class="bug-tag cs">Algorithms</span>
+                <p class="bug-desc">Mixed up base case in 0/1 Knapsack recursive memoization.</p>
+                <span class="bug-fix">Remedy: Re-derive code on paper</span>
+              </div>
+              <div class="bug-item">
+                <span class="bug-tag sys">Sys Arch</span>
+                <p class="bug-desc">Missed direct-mapped cache index vs tag bit calculation.</p>
+                <span class="bug-fix">Remedy: Practice 3 hex examples</span>
+              </div>
+            </div>
+            <button id="add-bug-btn" class="btn-ghost btn-sm" style="margin-top: 12px; width: 100%;">+ Log New
+              Weakness</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: Spaced Repetition (SR) Manager -->
+    <section id="spaced-view" class="view-section">
+      <div class="glass-panel spaced-card">
+        <div class="panel-header">
+          <div class="panel-title-wrap">
+            <div class="panel-icon">📦</div>
+            <div>
+              <h2 class="panel-title">Spaced Repetition Review Engine (Leitner 3-Tier System)</h2>
+              <p class="panel-sub">Preventing the Ebbinghaus Forgetting Curve by scheduling reviews at 1-day, 3-day, and
+                7-day intervals.</p>
+            </div>
+          </div>
+          <button id="add-sr-item-btn" class="btn-secondary btn-sm">+ Add Flashcard/Topic</button>
+        </div>
+
+        <div class="leitner-boxes-grid">
+          <!-- Box 1: Daily Review -->
+          <div class="leitner-box box-1">
+            <div class="box-header">
+              <div class="box-badge">Box 1 (Daily)</div>
+              <span class="box-count" id="b1-count">4 Topics</span>
+            </div>
+            <h3 class="box-title">High Friction / New Topics</h3>
+            <p class="box-sub">Reviewed every single day until 100% fluent.</p>
+            <div class="box-items" id="box-1-items">
+              <!-- Dynamic items -->
+            </div>
+          </div>
+
+          <!-- Box 2: Every 3 Days -->
+          <div class="leitner-box box-2">
+            <div class="box-header">
+              <div class="box-badge">Box 2 (Every 3 Days)</div>
+              <span class="box-count" id="b2-count">3 Topics</span>
+            </div>
+            <h3 class="box-title">Consolidating Concepts</h3>
+            <p class="box-sub">Reviewed on Tuesdays, Thursdays, and Sundays.</p>
+            <div class="box-items" id="box-2-items">
+              <!-- Dynamic items -->
+            </div>
+          </div>
+
+          <!-- Box 3: Every 7 Days -->
+          <div class="leitner-box box-3">
+            <div class="box-header">
+              <div class="box-badge">Box 3 (Weekly)</div>
+              <span class="box-count" id="b3-count">4 Topics</span>
+            </div>
+            <h3 class="box-title">Long-Term Storage</h3>
+            <p class="box-sub">Reviewed during the Saturday / Sunday simulation resets.</p>
+            <div class="box-items" id="box-3-items">
+              <!-- Dynamic items -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Methodology Guidelines & Academic Coach Protocol Footer -->
+    <footer class="coach-methodology-footer">
+      <div class="methodology-card">
+        <div class="meth-icon">🛡️</div>
+        <h4>The 5-Minute Rule</h4>
+        <p>When resistance is high on your Level 1 subject, commit to just 5 minutes of focused work. 80% of
+          procrastination breaks once momentum is generated.</p>
+      </div>
+      <div class="methodology-card">
+        <div class="meth-icon">📝</div>
+        <h4>Closed-Book Rule</h4>
+        <p>Never re-read notes highlighting passively. Solve problems or blurt with notes shut. True retention occurs
+          during the struggle of retrieval.</p>
+      </div>
+      <div class="methodology-card">
+        <div class="meth-icon">⚡</div>
+        <h4>Interleaved Practice</h4>
+        <p>Do not study one subject for 6 hours straight. Rotate subjects between blocks to train your brain to
+          differentiate problem categories under exam pressure.</p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Modal for Adding Custom Study Block -->
+  <div id="add-block-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Add Scheduled Study Block</h3>
+        <button id="modal-close-btn" class="modal-close">&times;</button>
+      </div>
+      <form id="add-block-form">
+        <div class="form-group">
+          <label for="modal-day">Target Day</label>
+          <select id="modal-day" class="form-select">
+            <option value="mon">Monday</option>
+            <option value="tue">Tuesday</option>
+            <option value="wed">Wednesday</option>
+            <option value="thu">Thursday</option>
+            <option value="fri">Friday</option>
+            <option value="sat">Saturday</option>
+            <option value="sun">Sunday</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="modal-time">Time & Duration</label>
+          <input type="text" id="modal-time" class="form-input" placeholder="e.g. 6:00 PM - 6:30 PM (25m Pomodoro)"
+            required>
+        </div>
+        <div class="form-group">
+          <label for="modal-course">Course / Subject</label>
+          <input type="text" id="modal-course" class="form-input" placeholder="e.g. Python or RDBMS" required>
+        </div>
+        <div class="form-group">
+          <label for="modal-task">Objective / Task</label>
+          <input type="text" id="modal-task" class="form-input" placeholder="e.g. Solve 3 Taylor Series problems"
+            required>
+        </div>
+        <div class="form-group">
+          <label for="modal-recall">Active Recall Protocol</label>
+          <input type="text" id="modal-recall" class="form-input" placeholder="e.g. Feynman technique on blank paper"
+            required>
+        </div>
+        <div class="form-group">
+          <label for="modal-sr">Spaced Repetition Slot</label>
+          <input type="text" id="modal-sr" class="form-input" placeholder="e.g. Review Day-3 Anki deck (15 mins)">
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="modal-cancel-btn" class="btn-secondary">Cancel</button>
+          <button type="submit" class="btn-primary">Add to Schedule</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       USER AUTHENTICATION (LOGIN / SIGNUP) MODAL
+       ========================================== -->
+  <div id="auth-modal" class="modal-overlay hidden">
+    <div class="modal-card auth-modal-card">
+      <div class="modal-header">
+        <div class="auth-header-title">
+          <span class="auth-icon">🛡️</span>
+          <div>
+            <h3 id="auth-modal-title">Student Account Access</h3>
+            <p class="modal-subtitle">Sync your study sessions, customized notes, and progress telemetry</p>
+          </div>
+        </div>
+        <button id="auth-modal-close-btn" class="modal-close" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="auth-tabs">
+        <button type="button" class="auth-tab active" id="tab-login" data-tab="login">Sign In</button>
+        <button type="button" class="auth-tab" id="tab-signup" data-tab="signup">Create Account</button>
+      </div>
+
+      <form id="auth-form" class="auth-form">
+        <div class="form-group" id="group-signup-name" style="display: none;">
+          <label for="auth-name">Full Name / Scholar Handle</label>
+          <input type="text" id="auth-name" class="form-input" placeholder="e.g. Alex Morgan">
+        </div>
+
+        <div class="form-group">
+          <label for="auth-email">Academic Email</label>
+          <input type="email" id="auth-email" class="form-input" placeholder="e.g. alex@university.edu" required>
+        </div>
+
+        <div class="form-group" id="group-signup-major" style="display: none;">
+          <label for="auth-major">Academic Major / Target Focus</label>
+          <input type="text" id="auth-major" class="form-input" placeholder="e.g. Computer Science & Mathematics">
+        </div>
+
+        <div class="form-group">
+          <label for="auth-password">Password</label>
+          <input type="password" id="auth-password" class="form-input" placeholder="••••••••" required>
+        </div>
+
+        <div class="modal-actions auth-actions">
+          <button type="button" id="auth-guest-btn" class="btn-secondary">Continue as Guest</button>
+          <button type="submit" id="auth-submit-btn" class="btn-primary">Sign In</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       USER SESSION HISTORY & DASHBOARD MODAL
+       ========================================== -->
+  <div id="session-modal" class="modal-overlay hidden">
+    <div class="modal-card session-modal-card">
+      <div class="modal-header">
+        <div class="auth-header-title">
+          <span class="auth-icon" id="session-user-avatar">🎓</span>
+          <div>
+            <h3 id="session-modal-username">Your Name</h3>
+            <p class="modal-subtitle" id="session-modal-major">General Academic Study Plan</p>
+          </div>
+        </div>
+        <button id="session-modal-close-btn" class="modal-close" aria-label="Close modal">&times;</button>
+      </div>
+
+      <!-- Time Investment Dashboard Grid -->
+      <div class="session-stats-grid">
+        <div class="session-metric-card">
+          <span class="metric-label">Current Active Session</span>
+          <span class="metric-val highlight-cyan" id="metric-current-session">00:00:00</span>
+          <span class="metric-sub">Tab Focus Synchronized</span>
+        </div>
+        <div class="session-metric-card">
+          <span class="metric-label">Total Focused Today</span>
+          <span class="metric-val highlight-accent" id="metric-today-session">0h 00m</span>
+          <span class="metric-sub" id="metric-today-sessions-count">1 session logged</span>
+        </div>
+        <div class="session-metric-card">
+          <span class="metric-label">All-Time Study Invested</span>
+          <span class="metric-val highlight-emerald" id="metric-lifetime-session">0h 00m</span>
+          <span class="metric-sub">Cumulative Study</span>
+        </div>
+      </div>
+
+      <!-- Personal Study Notes & Preferences -->
+      <div class="session-name-section">
+        <label for="user-display-name-input" class="editor-label">👤 Your display name:</label>
+        <input type="text" id="user-display-name-input" class="form-input" placeholder="Enter your name" maxlength="40">
+      </div>
+      <div class="session-notes-section">
+        <div class="notes-header">
+          <label for="user-study-notes" class="editor-label">📝 Personal Academic Notes & Strategy Preferences:</label>
+          <span class="save-indicator" id="notes-save-indicator">Auto-saved to profile</span>
+        </div>
+        <textarea id="user-study-notes" class="user-notes-textarea" placeholder="Record long-term semester goals, exam dates, formulas, or coaching notes here..."></textarea>
+      </div>
+
+      <!-- Session History Timeline Log -->
+      <div class="session-history-section">
+        <div class="history-header">
+          <h4 class="history-title">⏱️ Recent Study Session Logs</h4>
+          <button type="button" id="clear-session-history-btn" class="btn-ghost btn-xs">Clear Log</button>
+        </div>
+        <div class="session-log-list" id="session-log-list">
+          <!-- Populated dynamically by JavaScript -->
+        </div>
+      </div>
+
+      <div class="modal-actions session-modal-actions">
+        <div class="data-actions" aria-label="Study data backup">
+          <button type="button" id="export-json-btn" class="btn-secondary btn-xs">Export JSON</button>
+          <button type="button" id="export-csv-btn" class="btn-secondary btn-xs">Export CSV</button>
+          <button type="button" id="import-data-btn" class="btn-secondary btn-xs">Import JSON</button>
+          <input type="file" id="import-data-input" accept="application/json,.json" hidden>
+        </div>
+        <button type="button" id="btn-user-logout" class="btn-secondary">Log Out / Switch User</button>
+        <button type="button" id="session-modal-done-btn" class="btn-primary">Save & Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       AI ACADEMIC ASSISTANT CHAT WIDGET
+       ========================================== -->
+  <!-- Floating Launcher FAB -->
+  <button id="ai-chat-launcher" class="ai-chat-launcher" title="Open Academic AI Assistant"
+    aria-label="Open Academic AI Assistant">
+    <div class="ai-launcher-glow"></div>
+    <span class="ai-launcher-icon">✨</span>
+    <span class="ai-launcher-label">AI Coach</span>
+    <span class="ai-launcher-dot"></span>
+  </button>
+
+  <!-- Floating Chat Window -->
+  <div id="ai-chat-window" class="ai-chat-window hidden" aria-hidden="true">
+    <!-- Chat Header -->
+    <div class="ai-chat-header">
+      <div class="ai-header-left">
+        <div class="ai-avatar">
+          <span>🤖</span>
+          <span class="ai-online-indicator" title="Connected to Study Engine Telemetry"></span>
+        </div>
+        <div class="ai-header-meta">
+          <h3 class="ai-title">AI Subject Teacher</h3>
+          <p class="ai-subtitle">Quick explanations, examples & exam help</p>
+        </div>
+      </div>
+      <div class="ai-header-right">
+        <button id="ai-chat-clear" class="ai-btn-icon" title="Clear Chat History" aria-label="Clear chat">🧹</button>
+        <button id="ai-chat-minimize" class="ai-btn-icon" title="Minimize Chat" aria-label="Minimize chat">✕</button>
+      </div>
+    </div>
+
+    <!-- Telemetry Status Ribbon -->
+    <div class="ai-telemetry-bar">
+      <div class="telemetry-pill" id="ai-telemetry-day">📅 Mon</div>
+      <div class="telemetry-pill" id="ai-telemetry-task">🎯 Teacher ready for questions</div>
+      <div class="telemetry-pill" id="ai-telemetry-timer">⏱️ Pomodoro Ready</div>
+    </div>
+
+    <!-- Quick Action Chips -->
+    <div class="ai-chips-scroll">
+      <button class="ai-quick-chip" data-query="Give me the basic meaning of all five subjects with one simple example each">📚 Subject Basics</button>
+      <button class="ai-quick-chip" data-query="Teach me the most important Python basics">🐍 Python Basics</button>
+      <button class="ai-quick-chip" data-query="Explain primary keys and foreign keys in RDBMS">🗄️ RDBMS Help</button>
+      <button class="ai-quick-chip" data-query="Explain supervised and unsupervised learning in AI">🤖 AI Concepts</button>
+      <button class="ai-quick-chip" data-query="Explain usability and visual hierarchy in UI design">🎨 UI Design</button>
+      <button class="ai-quick-chip" data-query="Explain the OSI model in computer networks">🌐 Networks</button>
+    </div>
+
+    <!-- Messages Body -->
+    <div class="ai-messages-container" id="ai-chat-messages">
+      <!-- Injected by JavaScript -->
+    </div>
+
+    <!-- Input Form -->
+    <form id="ai-chat-form" class="ai-chat-form">
+      <div class="ai-input-wrap">
+        <textarea id="ai-chat-input" class="ai-chat-textarea"
+          placeholder="Ask your AI teacher anything..." rows="1"></textarea>
+        <button type="submit" id="ai-chat-send-btn" class="ai-chat-send" title="Send Message" aria-label="Send message">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+      <div class="ai-form-footer">
+        <span>Powered by Study Engine Context • Enter to send</span>
+      </div>
+    </form>
+  </div>
+
+  <!-- Custom Futuristic Interactive Cursor -->
+  <div class="custom-cursor-dot" id="cursor-dot"></div>
+  <div class="custom-cursor-ring" id="cursor-ring"></div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
