@@ -1459,11 +1459,34 @@ class AcademicAIChat {
     if (el) el.remove();
   }
 
+  isFastLocalQuery(userQuery) {
+    const query = userQuery.toLowerCase();
+    return /\b(today|tomorrow|next|schedule|study plan|what should i study|what to do|right now|deadline|priority|urgent|recall|feynman|blurt|retention|checkpoint|spaced repetition|leitner|flashcard|anki|procrastinat|motivation|pomodoro|interleav|what can you teach|all subjects)\b/.test(query)
+      || /\b(mon|monday|tue|tuesday|wed|wednesday|thu|thursday|fri|friday|sat|saturday|sun|sunday)\b/.test(query) && /\b(due|schedule|plan|task|block|have|show|what)\b/.test(query);
+  }
+
   async generateResponse(userQuery) {
     this.isGenerating = true;
     this.showTypingIndicator();
 
     try {
+      const contextualResponse = this.computeContextualResponse(userQuery);
+      if (this.isFastLocalQuery(userQuery)) {
+        this.hideTypingIndicator();
+        const aiMsg = {
+          role: 'assistant',
+          content: contextualResponse.text,
+          action: contextualResponse.action || null,
+          timestamp: Date.now()
+        };
+        this.history.push(aiMsg);
+        this.renderMessageElement(aiMsg);
+        this.saveHistory();
+        this.scrollToBottom();
+        this.updateTelemetry();
+        return;
+      }
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -1485,7 +1508,7 @@ class AcademicAIChat {
 
       this.hideTypingIndicator();
       // Preserve existing planner actions while Gemini supplies the natural-language answer.
-      const contextualAction = this.computeContextualResponse(userQuery).action || null;
+      const contextualAction = contextualResponse.action || null;
 
       const aiMsg = {
         role: 'assistant',

@@ -11,15 +11,16 @@ const apiKey = process.env.GEMINI_API_KEY?.trim();
 const hasUsableApiKey = Boolean(apiKey)
     && !/^replace_with_google_ai_studio_api_key$/i.test(apiKey);
 const ai = hasUsableApiKey ? new GoogleGenAI({ apiKey }) : null;
-const model = process.env.GEMINI_MODEL || "gemini-3.6-flash";
-const fallbackModel = process.env.GEMINI_FALLBACK_MODEL || "gemini-flash-latest";
+const model = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
+const fallbackModel = process.env.GEMINI_FALLBACK_MODEL || "gemini-2.5-flash";
 const systemInstruction = `You are an educational AI assistant inside an AI Study Planner application.
 Answer the student's questions clearly and accurately. You can help with any educational topic,
 programming, mathematics, science, general knowledge, study planning, revision, explanations,
 examples, quizzes and code. Do not restrict yourself to the student's currently selected subjects.
 Use the student's study context when it is relevant, especially for study-planning questions.
 Explain difficult concepts in simple language when appropriate. Give step-by-step explanations for
-problems when useful. Do not invent information when uncertain.`;
+problems when useful. Be direct and concise by default so the student gets a fast answer.
+Do not invent information when uncertain.`;
 
 const sleep = (milliseconds) => new Promise(resolve => setTimeout(resolve, milliseconds));
 
@@ -38,51 +39,73 @@ app.post("/api/chat", async (req, res) => {
             });
         }
 
-        const request = {
-            model,
-            contents: `Student study context (use only when relevant):
+        const fallbackChain = Array.from(
+            new Set([
+                model,
+                fallbackModel,
+                "gemini-2.5-flash-lite",
+                "gemini-2.5-flash",
+                "gemini-1.5-flash"
+            ].filter(Boolean))
+        );
+
+        let response = null;
+        let lastError = null;
+
+        for (const candidateModel of fallbackChain) {
+            try {
+                const config = {
+                    systemInstruction,
+                    maxOutputTokens: 1024
+                };
+                if (/2\.5|thinking/i.test(candidateModel)) {
+                    config.thinkingConfig = {
+                        thinkingBudget: 0
+                    };
+                }
+
+                response = await ai.models.generateContent({
+                    model: candidateModel,
+                    contents: `Student study context (use only when relevant):
 ${JSON.stringify(studyContext)}
 
 Student question:
 ${message.trim()}`,
-            config: {
-                systemInstruction
-            }
-        };
-
-        let response;
-        let activeModel = model;
-        for (let attempt = 0; attempt < 3; attempt++) {
-            try {
-                response = await ai.models.generateContent({
-                    ...request,
-                    model: activeModel
+                    config
                 });
-                break;
+
+                if (response?.text) {
+                    break;
+                }
             } catch (error) {
-                const isQuotaFailure = Number(error?.status) === 429
-                    || /quota|rate limit|resource exhausted/i.test(String(error?.message || ""));
-                const isModelFailure = Number(error?.status) === 400
-                    || Number(error?.status) === 404
-                    || /model|not found|unsupported/i.test(String(error?.message || ""));
-                if (isQuotaFailure && activeModel !== fallbackModel && attempt === 0) {
-                    activeModel = fallbackModel;
-                    continue;
-                }
-                if (isModelFailure && activeModel !== fallbackModel) {
-                    activeModel = fallbackModel;
-                    continue;
-                }
-                const isTemporaryFailure = error && error.status === 503;
-                if (!isTemporaryFailure || attempt === 2) {
+                lastError = error;
+                const status = Number(error?.status);
+                const msg = String(error?.message || "");
+                console.warn(`[Gemini] Attempt with model "${candidateModel}" failed (status: ${status}): ${msg}`);
+
+                // If authentication error, trying other models won't help
+                const isAuthError = status === 401 || status === 403
+                    || /api key|api_key|authentication|credential|unauthorized|forbidden|unauthenticated/i.test(msg);
+                if (isAuthError) {
                     throw error;
                 }
-                await sleep(600 * (attempt + 1));
+
+                // If temporary failure (503) or rate limit (429), wait slightly before trying the next model
+                if (status === 503 || status === 429) {
+                    await sleep(350);
+                }
             }
         }
 
+        if (!response?.text) {
+            if (lastError) {
+                throw lastError;
+            }
+            return res.status(500).json({ error: "Failed to generate a response from AI models." });
+        }
+
         res.json({
-            reply: response.text || "I couldn't generate an answer for that question."
+            reply: response.text
         });
 
     } catch (error) {
@@ -95,13 +118,18 @@ ${message.trim()}`,
                 ? 502
                 : 500;
         const message = typeof error?.message === "string" ? error.message : "";
-        const safeMessage = upstreamStatus === 429 || /quota|rate limit|resource exhausted/i.test(message)
-            ? "Gemini quota exceeded for this API project. Wait for the quota to reset, enable billing, or replace the exposed API key in .env with a new key."
-            : /api key|api_key|authentication|credential|access.?token|permission|unauthorized|forbidden|unauthenticated/i.test(message)
-            ? "Gemini authentication failed. Set GEMINI_API_KEY to a valid Google AI Studio API key in .env."
-            : /not found|model|unsupported/i.test(message)
-            ? "The configured Gemini model is unavailable. Use gemini-3.6-flash or gemini-flash-latest in .env."
-            : "The Gemini service is temporarily unavailable. Check the server logs for details.";
+
+        let safeMessage = "The Gemini service is temporarily unavailable. Check the server logs for details.";
+
+        if (upstreamStatus === 503 || /high demand|temporarily unavailable|spikes in demand|overloaded/i.test(message)) {
+            safeMessage = "Google's Gemini service is currently experiencing high demand (503). Please try sending your question again in a few moments.";
+        } else if (upstreamStatus === 429 || /quota|rate limit|resource exhausted/i.test(message)) {
+            safeMessage = "Gemini quota exceeded for this API project. Wait for the quota to reset, enable billing, or replace the API key in .env with a new key.";
+        } else if (/api key|api_key|authentication|credential|access.?token|permission|unauthorized|forbidden|unauthenticated/i.test(message)) {
+            safeMessage = "Gemini authentication failed. Set GEMINI_API_KEY to a valid Google AI Studio API key in .env.";
+        } else if (upstreamStatus === 404 || /models\/[^\s]+ is not found|not found for api version|unsupported model/i.test(message)) {
+            safeMessage = "The configured Gemini model is unavailable. Please check GEMINI_MODEL in .env.";
+        }
 
         res.status(status).json({
             error: safeMessage
