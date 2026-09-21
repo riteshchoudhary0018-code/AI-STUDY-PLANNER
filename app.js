@@ -1122,6 +1122,7 @@ class AcademicAIChat {
     this.telemetryDay = document.getElementById('ai-telemetry-day');
     this.telemetryTask = document.getElementById('ai-telemetry-task');
     this.telemetryTimer = document.getElementById('ai-telemetry-timer');
+    this.modelStatus = document.getElementById('ai-model-status');
   }
 
   bindEvents() {
@@ -1504,6 +1505,9 @@ class AcademicAIChat {
       }
       if (typeof data.reply !== 'string' || !data.reply.trim()) {
         throw new Error('Chat response did not include a reply.');
+      }
+      if (this.modelStatus && typeof data.model === 'string' && data.model.trim()) {
+        this.modelStatus.textContent = `Powered by ${data.model} • Study Engine Context • Enter to send`;
       }
 
       this.hideTypingIndicator();

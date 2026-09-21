@@ -11,8 +11,8 @@ const apiKey = process.env.GEMINI_API_KEY?.trim();
 const hasUsableApiKey = Boolean(apiKey)
     && !/^replace_with_google_ai_studio_api_key$/i.test(apiKey);
 const ai = hasUsableApiKey ? new GoogleGenAI({ apiKey }) : null;
-const model = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
-const fallbackModel = process.env.GEMINI_FALLBACK_MODEL || "gemini-2.5-flash";
+const model = process.env.GEMINI_MODEL?.trim() || "gemini-flash-latest";
+const fallbackModel = process.env.GEMINI_FALLBACK_MODEL?.trim();
 const systemInstruction = `You are an educational AI assistant inside an AI Study Planner application.
 Answer the student's questions clearly and accurately. You can help with any educational topic,
 programming, mathematics, science, general knowledge, study planning, revision, explanations,
@@ -39,30 +39,18 @@ app.post("/api/chat", async (req, res) => {
             });
         }
 
-        const fallbackChain = Array.from(
-            new Set([
-                model,
-                fallbackModel,
-                "gemini-2.5-flash-lite",
-                "gemini-2.5-flash",
-                "gemini-1.5-flash"
-            ].filter(Boolean))
-        );
+        const modelCandidates = Array.from(new Set([model, fallbackModel].filter(Boolean)));
 
         let response = null;
+        let usedModel = null;
         let lastError = null;
 
-        for (const candidateModel of fallbackChain) {
+        for (const candidateModel of modelCandidates) {
             try {
                 const config = {
                     systemInstruction,
                     maxOutputTokens: 1024
                 };
-                if (/2\.5|thinking/i.test(candidateModel)) {
-                    config.thinkingConfig = {
-                        thinkingBudget: 0
-                    };
-                }
 
                 response = await ai.models.generateContent({
                     model: candidateModel,
@@ -75,6 +63,7 @@ ${message.trim()}`,
                 });
 
                 if (response?.text) {
+                    usedModel = candidateModel;
                     break;
                 }
             } catch (error) {
@@ -105,7 +94,8 @@ ${message.trim()}`,
         }
 
         res.json({
-            reply: response.text
+            reply: response.text,
+            model: usedModel
         });
 
     } catch (error) {
@@ -128,7 +118,7 @@ ${message.trim()}`,
         } else if (/api key|api_key|authentication|credential|access.?token|permission|unauthorized|forbidden|unauthenticated/i.test(message)) {
             safeMessage = "Gemini authentication failed. Set GEMINI_API_KEY to a valid Google AI Studio API key in .env.";
         } else if (upstreamStatus === 404 || /models\/[^\s]+ is not found|not found for api version|unsupported model/i.test(message)) {
-            safeMessage = "The configured Gemini model is unavailable. Please check GEMINI_MODEL in .env.";
+            safeMessage = "The configured Gemini model is unavailable. Set GEMINI_MODEL=gemini-flash-latest in .env and restart the server.";
         }
 
         res.status(status).json({
